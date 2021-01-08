@@ -1,43 +1,87 @@
 import FormFields from '../../components/FormFields'
 
-const addNewLines = (code: string[]): string[] => {
-    const newLines: string[] = [];
-    var remainingBrackets: number = 0;
-    for (const line of code) {
-        let startPos = 0;
-        const bracketPos: number[] = []
-        for (let i = 0; i < line.length; i += 1) {
-            if (line[i] === '{') {
-                bracketPos.push[i];
-            } else if (line[i] === '}') {
-                if (bracketPos.length === 0) {
-                    if (remainingBrackets > 0) {
-                        remainingBrackets -= 1;
-                        newLines.push(line.substr(startPos, i - startPos));
-                        startPos = i;
-                    }
-                } else {
-                    bracketPos.pop[i];
-                }
+const MAX_LINE_LEN = 80;
+
+const parseCode = (code: string): string => {
+    let stringMode = 0;
+    let escapeMode = false;
+    let bracketMode = false;
+    let newCode = "";
+    let newLine = "";
+    for (let i = 0; i < code.length; i += 1) {
+        newLine += code[i];
+        if (stringMode) {
+            if (code[i] === '\\') {
+                escapeMode = true;
+            } else if (escapeMode) {
+                escapeMode = false;
+            } else if ((code[i] === '"' && stringMode === 1) || (code[i] === '\'' && stringMode === 2)) {
+                stringMode = 0;
             }
-        }
-        const len = bracketPos.length;
-        if (len > 0) {
-            console.log(len);
-            newLines.push(line.substr(startPos, bracketPos[len - 1] + 1));
-            newLines.push(line.substr(bracketPos[len - 1] + 1));
-            remainingBrackets += len;
-        } else {
-            newLines.push(line);
+        } else if (bracketMode) {
+            if (code[i] === ')') {
+                bracketMode = false;
+            }
+        } else if (code[i] == '(') {
+            bracketMode = true;
+        } else if (code[i] === '"') {
+            stringMode = 1;
+        } else if (code[i] === '\'') {
+            stringMode = 2;
+        } else if (code[i] === '{' || code[i] === '}' || code[i] === ';' || code[i] === ',') {
+            newCode += newLine + '\n';
+            newLine = "";
+        }   
+    }
+    return newCode;    
+}
+
+const parseCodeBlock = (code: string): string => {
+    let stringMode = 0;
+    let escapeMode = false;
+    let bracketMode = false;
+    let blockStart = -1;
+    let numBrackets = 0;
+    for (let i = 0; i < code.length; i += 1) {
+        if (stringMode) {
+            if (code[i] === '\\') {
+                escapeMode = true;
+            } else if (escapeMode) {
+                escapeMode = false;
+            } else if ((code[i] === '"' && stringMode === 1) || (code[i] === '\'' && stringMode === 2)) {
+                stringMode = 0;
+            }
+        } else if (bracketMode) {
+            if (code[i] === '"') {
+                stringMode = 1;
+            } else if (code[i] === '\'') {
+                stringMode = 2;
+            } else if (code[i] == '}') {
+                numBrackets -= 1;
+                if (numBrackets === 0) {
+                    return parseCode(code.substring(0, blockStart + 1)) + parseCodeBlock(code.substring(blockStart + 1, i)) + parseCodeBlock(code.substring(i));
+                }
+            } else if (code[i] == '{') {
+                numBrackets += 1;
+            }
+        } else if (code[i] === '"') {
+            stringMode = 1;
+        } else if (code[i] === '\'') {
+            stringMode = 2;
+        } else if (code[i] === '{') {
+            bracketMode = true;
+            blockStart = i;
+            numBrackets += 1;
         }
     }
-    return newLines;
+    return parseCode(code);
 }
 
 const addIndents = (code: string[], indentChar: string, size: number): string => {
-    let newLines: string = "";
+    let newLines = "";
     let numIndents = 0;
-    for (const line of code) {
+    const trimmedLines = removeExtraWS(code);
+    for (const line of trimmedLines.split('\n')) {
         if (line[0] == '}') {
             numIndents -= 1;
         }
@@ -55,8 +99,8 @@ const addIndents = (code: string[], indentChar: string, size: number): string =>
     return newLines;
 }
 
-const removeExtraWS = (code: string[]): string[] => {
-    const newLines:string[] = [];
+const removeExtraWS = (code: string[]): string => {
+    let newLines = "";
     for (const line of code) {
         let firstNonWS = -1;
         let lastNonWS = -1;
@@ -66,18 +110,18 @@ const removeExtraWS = (code: string[]): string[] => {
                 lastNonWS = i;
             }
         }
-        newLines.push(line.substring(firstNonWS, lastNonWS + 1));
+        newLines += line.substring(firstNonWS, lastNonWS + 1) + '\n';
     }
     return newLines;
-}
+} 
 
 const formatCode = (code: string, indents: string, size: number): string => {
     const lines: string[] = code.split('\n');
-    const trimmedLines: string[] = removeExtraWS(lines);
+    const trimmedLines: string = removeExtraWS(lines);
     if (indents == 'tabs') {
-        return addIndents(addNewLines(trimmedLines), '\t', size);
+        return addIndents(parseCodeBlock(trimmedLines).split('\n'), '\t', size);
     } else {
-        return addIndents(addNewLines(trimmedLines), ' ', size); 
+        return addIndents(parseCodeBlock(trimmedLines).split('\n'), ' ', size);
     }
 }
 
@@ -88,15 +132,15 @@ export default (req, res) => {
         const opts: FormFields = req.body;
         if (opts.indents != 'tabs' && opts.indents != 'spaces') {
             res.statusCode = 400;
-            res.json({error: "Invalid Configuration"});
+            res.json({ error: "Invalid Configuration" });
         } else if (isNaN(Number(opts.size))) {
             res.statusCode = 400;
-            res.json({error: "Invalid Configuration"});
+            res.json({ error: "Invalid Configuration" });
         } else {
             res.statusCode = 200;
             const formattedCode: string = formatCode(opts.code, opts.indents, Number(opts.size));
             res.json({ code: formattedCode });
         }
-        
+
     }
 }
