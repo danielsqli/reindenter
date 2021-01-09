@@ -26,12 +26,12 @@ const parseCode = (code: string): string => {
                 if (code[i] === ')') {
                     bracketMode = false;
                 }
-            } if (code[i] === ' ' || code[i] === '\t' || code[i] === '\n') {
+            } else if (code[i] === ' ' || code[i] === '\t' || code[i] === '\n') {
                 if (prevIsWS) newLine = newLine.slice(0, -1);
                 prevIsWS = true;
             } else {
                 prevIsWS = false;
-                if (code[i] == '(') {
+                if (code[i] === '(') {
                     bracketMode = true;
                 } else if (code[i] === '"') {
                     stringMode = 1;
