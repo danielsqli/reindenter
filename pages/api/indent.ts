@@ -1,39 +1,50 @@
 import FormFields from '../../components/FormFields'
 
-const MAX_LINE_LEN = 80;
+const SPLIT_LEN = 15;
 
 const parseCode = (code: string): string => {
-    let stringMode = 0;
-    let escapeMode = false;
-    let bracketMode = false;
-    let newCode = "";
-    let newLine = "";
-    for (let i = 0; i < code.length; i += 1) {
-        newLine += code[i];
-        if (stringMode) {
-            if (code[i] === '\\') {
-                escapeMode = true;
-            } else if (escapeMode) {
-                escapeMode = false;
-            } else if ((code[i] === '"' && stringMode === 1) || (code[i] === '\'' && stringMode === 2)) {
-                stringMode = 0;
+    if (code.length < SPLIT_LEN) {
+        return code;
+    } else {
+        let stringMode = 0;
+        let escapeMode = false;
+        let bracketMode = false;
+        let newCode = "";
+        let newLine = "";
+        for (let i = 0; i < code.length; i += 1) {
+            newLine += code[i];
+            if (stringMode) {
+                if (code[i] === '\\') {
+                    escapeMode = true;
+                } else if (escapeMode) {
+                    escapeMode = false;
+                } else if ((code[i] === '"' && stringMode === 1) || (code[i] === '\'' && stringMode === 2)) {
+                    stringMode = 0;
+                }
+            } else if (bracketMode) {
+                if (code[i] === ')') {
+                    bracketMode = false;
+                }
+            } else if (code[i] == '(') {
+                bracketMode = true;
+            } else if (code[i] === '"') {
+                stringMode = 1;
+            } else if (code[i] === '\'') {
+                stringMode = 2;
+            } else if (code[i] === '{' || code[i] === '}' || code[i] === ';' || code[i] === ',') {
+                newCode += newLine;
+                if ((i < code.length - 1 && code[i + 1] != '\n') || i === code.length - 1) newCode += '\n';
+                newLine = "";
+            }   
+        }
+        if (newLine != "") {
+            newCode += newLine;
+            if (newLine[newLine.length - 1] != '\n') {
+                newCode += '\n';
             }
-        } else if (bracketMode) {
-            if (code[i] === ')') {
-                bracketMode = false;
-            }
-        } else if (code[i] == '(') {
-            bracketMode = true;
-        } else if (code[i] === '"') {
-            stringMode = 1;
-        } else if (code[i] === '\'') {
-            stringMode = 2;
-        } else if (code[i] === '{' || code[i] === '}' || code[i] === ';' || code[i] === ',') {
-            newCode += newLine + '\n';
-            newLine = "";
-        }   
+        }
+        return newCode;    
     }
-    return newCode;    
 }
 
 const parseCodeBlock = (code: string): string => {
