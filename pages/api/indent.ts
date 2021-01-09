@@ -77,7 +77,10 @@ const parseCodeBlock = (code: string): string => {
             } else if (code[i] == '}') {
                 numBrackets -= 1;
                 if (numBrackets === 0) {
-                    return parseCode(code.substring(0, blockStart + 1)) + '\n' + parseCodeBlock(code.substring(blockStart + 1, i)) + '\n' + parseCodeBlock(code.substring(i));
+                    if (i - blockStart + 1 > SPLIT_LEN) {
+                        return parseCode(code.substring(0, blockStart + 1)) + '\n' + parseCodeBlock(code.substring(blockStart + 1, i)) + '\n' + parseCodeBlock(code.substring(i));
+                    }
+                    else return parseCode(code.substring(0, blockStart + 1)) + parseCodeBlock(code.substring(blockStart + 1, i)) + parseCodeBlock(code.substring(i));
                 }
             } else if (code[i] == '{') {
                 numBrackets += 1;

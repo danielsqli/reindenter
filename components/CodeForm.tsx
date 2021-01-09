@@ -10,7 +10,7 @@ const CodeForm = () => {
   const [formatted, setFormatted] = useState("");
 
   const initialValues: FormFields = {
-    code: "const foo = () => {\n\tconst bar = ''\n\t\treturn bar;\n}",
+    code: "const foo = () => {\n\tconst bar = '';\n\t\treturn bar;\n}",
     indents: "tabs",
     size: "1",
   };
