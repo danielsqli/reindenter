@@ -11,6 +11,7 @@ const parseCode = (code: string): string => {
         let bracketMode = false;
         let newCode = "";
         let newLine = "";
+        let prevIsWS = false;
         for (let i = 0; i < code.length; i += 1) {
             newLine += code[i];
             if (stringMode) {
@@ -25,17 +26,23 @@ const parseCode = (code: string): string => {
                 if (code[i] === ')') {
                     bracketMode = false;
                 }
-            } else if (code[i] == '(') {
-                bracketMode = true;
-            } else if (code[i] === '"') {
-                stringMode = 1;
-            } else if (code[i] === '\'') {
-                stringMode = 2;
-            } else if (code[i] === '{' || code[i] === '}' || code[i] === ';' || code[i] === ',') {
-                newCode += newLine;
-                if ((i < code.length - 1 && code[i + 1] != '\n') || i === code.length - 1) newCode += '\n';
-                newLine = "";
-            }   
+            } if (code[i] === ' ' || code[i] === '\t' || code[i] === '\n') {
+                if (prevIsWS) newLine = newLine.slice(0, -1);
+                prevIsWS = true;
+            } else {
+                prevIsWS = false;
+                if (code[i] == '(') {
+                    bracketMode = true;
+                } else if (code[i] === '"') {
+                    stringMode = 1;
+                } else if (code[i] === '\'') {
+                    stringMode = 2;
+                } else if (code[i] === '{' || code[i] === '}' || code[i] === ';' || code[i] === ',') {
+                    newCode += newLine;
+                    if ((i < code.length - 1 && code[i + 1] != '\n') || i === code.length - 1) newCode += '\n';
+                    newLine = "";
+                }
+            }
         }
         if (newLine != "") {
             newCode += newLine;
@@ -70,7 +77,7 @@ const parseCodeBlock = (code: string): string => {
             } else if (code[i] == '}') {
                 numBrackets -= 1;
                 if (numBrackets === 0) {
-                    return parseCode(code.substring(0, blockStart + 1)) + parseCodeBlock(code.substring(blockStart + 1, i)) + parseCodeBlock(code.substring(i));
+                    return parseCode(code.substring(0, blockStart + 1)) + '\n' + parseCodeBlock(code.substring(blockStart + 1, i)) + '\n' + parseCodeBlock(code.substring(i));
                 }
             } else if (code[i] == '{') {
                 numBrackets += 1;
@@ -93,6 +100,7 @@ const addIndents = (code: string[], indentChar: string, size: number): string =>
     let numIndents = 0;
     const trimmedLines = removeExtraWS(code);
     for (const line of trimmedLines.split('\n')) {
+        if (line === "") continue;
         if (line[0] == '}') {
             numIndents -= 1;
         }
