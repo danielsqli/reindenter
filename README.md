@@ -1,21 +1,18 @@
-This is an app that will reindent code blocks
+This is an app that will reformat code
 
 ## Current Options
 
 Can set to use either tabs or spaces, and how many to use per indent
 
 ## Features
-Will remove excess indents, and add them when necessary.
 
-## Requirements
-
-The app assumes that the language used uses `{}` to separate code, and that extra whitespace is ignored 
+Will add newlines and indents wherever necessary, as long as the code is in a c-style syntax
 
 ## Usage
 
-App can be used with the UI at reindenter.vercel.app or with a POST request to reindenter.vercel.app/api/indent
+App can be used with the web app at reindenter.vercel.app or with a POST request to https://reindenter.vercel.app/api/indent
 
-The body must be in form 
+The body must be in the form
 
 ```
 {
