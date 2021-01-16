@@ -10,7 +10,7 @@ Will add newlines and indents wherever necessary, as long as the code is in a c-
 
 ## Usage
 
-App can be used with the web app at reindenter.vercel.app or with a POST request to https://reindenter.danielsqli.com/api/indent
+App can be used with the web app at reindenter.danielsqli.com or with a POST request to https://reindenter.danielsqli.com/api/indent
 
 The body must be in the form
 
